@@ -101,7 +101,7 @@ class Engine {
         // Register framework methods
         $methods = array(
             'start','stop','route','halt','error','notFound',
-            'render','redirect','etag','lastModified','json','jsonp'
+            'render','redirect','json','jsonp','httpCache'
         );
         foreach ($methods as $name) {
             $this->dispatcher->set($name, array($this, '_'.$name));
@@ -188,6 +188,17 @@ class Engine {
         }
 
         $this->loader->register($name, $class, $params, $callback);
+    }
+
+    /**
+     * Routes a URL to a callback function.
+     *
+     * @param string $pattern URL pattern to match
+     * @param callback $callback Callback function
+     * @param boolean $pass_route Pass the matching route object to the callback
+     */
+    public function route($pattern, $callback, $pass_route = false) {
+        $this->router()->map($pattern, $callback, $pass_route);
     }
 
     /**
@@ -346,17 +357,6 @@ class Engine {
     }
 
     /**
-     * Routes a URL to a callback function.
-     *
-     * @param string $pattern URL pattern to match
-     * @param callback $callback Callback function
-     * @param boolean $pass_route Pass the matching route object to the callback
-     */
-    public function _route($pattern, $callback, $pass_route = false) {
-        $this->router()->map($pattern, $callback, $pass_route);
-    }
-
-    /**
      * Stops processing and returns a given response.
      *
      * @param int $code HTTP status code
@@ -368,6 +368,7 @@ class Engine {
             ->status($code)
             ->write($message)
             ->send();
+
         exit();
     }
 
@@ -377,7 +378,8 @@ class Engine {
      * @param object $e Thrown exception
      */
     public function _error($e) {
-        $msg = sprintf('<h1>500 Internal Server Error</h1>'.
+        $msg = sprintf(
+            '<h1>500 Internal Server Error</h1>'.
             '<h3>%s (%s)</h3>'.
             '<pre>%s</pre>',
             $e->getMessage(),
@@ -512,33 +514,28 @@ class Engine {
     }
 
     /**
-     * Handles ETag HTTP caching.
+     * HTTP caching.
      *
-     * @param string $id ETag identifier
-     * @param string $type ETag type
+     * @param int|string $id Unix timestamp or ETag identifier
      */
-    public function _etag($id, $type = 'strong') {
-        $id = (($type === 'weak') ? 'W/' : '').$id;
+    public function _httpCache($id) {
+        // Last modified caching
+        if (is_int($id)) {
+            $this->response()->header('Last-Modified', gmdate('D, d M Y H:i:s \G\M\T', $id));
 
-        $this->response()->header('ETag', $id);
-
-        if (isset($_SERVER['HTTP_IF_NONE_MATCH']) &&
-            $_SERVER['HTTP_IF_NONE_MATCH'] === $id) {
-            $this->halt(304);
+            if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) &&
+                strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) === $id) {
+                $this->halt(304);
+            }
         }
-    }
+        // Etag caching
+        else {
+            $this->response()->header('ETag', $id);
 
-    /**
-     * Handles last modified HTTP caching.
-     *
-     * @param int $time Unix timestamp
-     */
-    public function _lastModified($time) {
-        $this->response()->header('Last-Modified', gmdate('D, d M Y H:i:s \G\M\T', $time));
-
-        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) &&
-            strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) === $time) {
-            $this->halt(304);
+            if (isset($_SERVER['HTTP_IF_NONE_MATCH']) &&
+                $_SERVER['HTTP_IF_NONE_MATCH'] === $id) {
+                $this->halt(304);
+            }
         }
     }
 }

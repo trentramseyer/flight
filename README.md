@@ -753,28 +753,28 @@ $id = Flight::request()->data->id;
 
 # HTTP Caching
 
-Flight provides built-in support for HTTP level caching. If the caching condition
+Flight provides built-in support for HTTP level caching with the `httpCache` method. If the caching condition
 is met, Flight will return an HTTP `304 Not Modified` response. The next time the
 client requests the same resource, they will be prompted to use their locally
 cached version.
 
 ## Last-Modified
 
-You can use the `lastModified` method and pass in a UNIX timestamp to set the date
+You can pass in a UNIX timestamp to the `httpCache` method to set the date
 and time a page was last modified. The client will continue to use their cache until
 the last modified value is changed.
 
 ```php
 Flight::route('/news', function(){
-    Flight::lastModified(1234567890);
+    Flight::httpCache(1234567890);
     echo 'This content will be cached.';
 });
 ```
 
 ## ETag
 
-`ETag` caching is similar to `Last-Modified`, except you can specify any id you
-want for the resource:
+If you pass in a string, `ETag` caching will be used. It is similar to `Last-Modified`, except you can 
+specify any id you want for the resource:
 
 ```php
 Flight::route('/news', function(){
@@ -783,7 +783,7 @@ Flight::route('/news', function(){
 });
 ```
 
-Keep in mind that calling either `lastModified` or `etag` will both set and check the
+Keep in mind that using `httpCache` will both set and check the
 cache value. If the cache value is the same between requests, Flight will immediately
 send an `HTTP 304` response and stop processing.
 
@@ -861,6 +861,7 @@ or overridden.
 ## Core Methods
 
 ```php
+Flight::route($pattern, $callback) // Maps a URL pattern to a callback.
 Flight::map($name, $callback) // Creates a custom framework method.
 Flight::register($name, $class, [$params], [$callback]) // Registers a class to a framework method.
 Flight::before($name, $callback) // Adds a filter before a framework method.
@@ -880,13 +881,11 @@ Flight::app() // Gets the application object instance
 Flight::start() // Starts the framework.
 Flight::stop() // Stops the framework and sends a response.
 Flight::halt([$code], [$message]) // Stop the framework with an optional status code and message.
-Flight::route($pattern, $callback) // Maps a URL pattern to a callback.
 Flight::redirect($url, [$code]) // Redirects to another URL.
 Flight::render($file, [$data], [$key]) // Renders a template file.
 Flight::error($exception) // Sends an HTTP 500 response.
 Flight::notFound() // Sends an HTTP 404 response.
-Flight::etag($id, [$type]) // Performs ETag HTTP caching.
-Flight::lastModified($time) // Performs last modified HTTP caching.
+Flight::httpCache($id) // Performs HTTP caching.
 Flight::json($data, [$code], [$encode], [$charset], [$option]) // Sends a JSON response.
 Flight::jsonp($data, [$param], [$code], [$encode], [$charset], [$option]) // Sends a JSONP response.
 ```
