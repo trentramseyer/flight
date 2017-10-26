@@ -14,10 +14,11 @@ matrix:
     - php: hhvm
   include:
     - php: 5.3
-    - dist: precise
+      dist: precise
+      env: 'COMPOSER_FLAGS="--prefer-stable --prefer-lowest"'
 
 before_script:
-  - travis_retry composer update --prefer-stable --prefer-lowest --prefer-source --no-interaction
+  - travis_retry composer update ${COMPOSER_FLAGS} --prefer-source --no-interaction
 
 script:
   - vendor/bin/phpunit tests --coverage-text
