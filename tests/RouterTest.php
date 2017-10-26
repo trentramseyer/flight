@@ -184,21 +184,23 @@ class RouterTest extends PHPUnit_Framework_TestCase
 
     // Check if route object was passed
     function testRouteObjectPassing(){
-        $this->router->map('/yes_route', function($route){
-            $this->assertTrue(is_object($route));
-            $this->assertTrue(is_array($route->methods));
-            $this->assertTrue(is_array($route->params));
-            $this->assertEquals(sizeof($route->params), 0);
-            $this->assertEquals($route->regex, null);
-            $this->assertEquals($route->splat, '');
-            $this->assertTrue($route->pass);
+        $self = $this;
+
+        $this->router->map('/yes_route', function($route) use ($self) {
+            $self->assertTrue(is_object($route));
+            $self->assertTrue(is_array($route->methods));
+            $self->assertTrue(is_array($route->params));
+            $self->assertEquals(sizeof($route->params), 0);
+            $self->assertEquals($route->regex, null);
+            $self->assertEquals($route->splat, '');
+            $self->assertTrue($route->pass);
         }, true);
         $this->request->url = '/yes_route';
 
         $this->check();
 
-        $this->router->map('/no_route', function($route = null){
-            $this->assertTrue(is_null($route));
+        $this->router->map('/no_route', function($route = null) use ($self) {
+            $self->assertTrue(is_null($route));
         }, false);
         $this->request->url = '/no_route';
 
@@ -206,10 +208,12 @@ class RouterTest extends PHPUnit_Framework_TestCase
     }
 
     function testRouteWithParameters() {
-        $this->router->map('/@one/@two', function($one, $two, $route){
-            $this->assertEquals(sizeof($route->params), 2);
-            $this->assertEquals($route->params['one'], $one);
-            $this->assertEquals($route->params['two'], $two);
+        $self = $this;
+
+        $this->router->map('/@one/@two', function($one, $two, $route) use ($self) {
+            $self->assertEquals(sizeof($route->params), 2);
+            $self->assertEquals($route->params['one'], $one);
+            $self->assertEquals($route->params['two'], $two);
         }, true);
         $this->request->url = '/1/2';
 
@@ -238,9 +242,11 @@ class RouterTest extends PHPUnit_Framework_TestCase
 
     // Test splat with named parameters
     function testSplatNamedPlusWildcard(){
-        $this->router->map('/account/@name/*', function($name, $route){
+        $self = $this;
+
+        $this->router->map('/account/@name/*', function($name, $route) use ($self) {
                 echo $route->splat;
-                $this->assertEquals('abc', $name);
+                $self->assertEquals('abc', $name);
             }, true);
         $this->request->url = '/account/abc/456/def/xyz';
 
